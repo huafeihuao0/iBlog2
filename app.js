@@ -9,6 +9,7 @@ var passport = require('passport');
 var i18n = require('./models/i18n');
 var saker = require('saker');
 
+/*控制器*/
 var bodyParser = require('body-parser');
 var indexCtrler = require('./routes/index');
 var blogCtrler = require('./routes/blog');
@@ -47,6 +48,21 @@ function mSetupViewEngine()
  **/
 function mUseMids()
 {
+    /*使用前置中间件*/
+    mUsePrevMids();
+    /*映射路由控制器*/
+    mMapRoutesToCtrlers();
+    /*404处理*/
+    app.use(m404Mid);
+    /*500错误*/
+    app.use(m500Mid);
+}
+
+/**
+ * 使用前置中间件
+ **/
+function mUsePrevMids()
+{
     app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));//服务器图标
     app.use(morgan('dev'));//日志
     app.use(bodyParser.json());//post内容体解析
@@ -58,24 +74,11 @@ function mUseMids()
     app.use(express.static(path.join(__dirname, 'public')));//静态资源
     app.use(passport.initialize());//认证解析
     app.use(passport.session());
-
-    app.use('/', indexCtrler);
-    app.use('/', localeCtrler);
-    app.use('/', miscCtrler);
-    app.use('/', authCtrler);
-    app.use('/blog', blogCtrler);
-    app.use('/admin', require('connect-ensure-login').ensureLoggedIn('/login'), adminCtrler);
-    app.use('/ue/controller', ueCtrler);
-
-    /*404处理*/
-    app.use(m404Mid);
-    /*500错误*/
-    app.use(m500Mid);
 }
 
 /**
-* 使用会话中间件
-**/
+ * 使用会话中间件
+ **/
 function mUseSessMid()
 {
     var sessOpts =//
@@ -92,8 +95,22 @@ function mUseSessMid()
 }
 
 /**
-* 404处理中间件
-**/
+ * 映射路由控制器
+ **/
+function mMapRoutesToCtrlers()
+{
+    app.use('/', indexCtrler);
+    app.use('/', localeCtrler);
+    app.use('/', miscCtrler);
+    app.use('/', authCtrler);
+    app.use('/blog', blogCtrler);
+    app.use('/admin', require('connect-ensure-login').ensureLoggedIn('/login'), adminCtrler);
+    app.use('/ue/controller', ueCtrler);
+}
+
+/**
+ * 404处理中间件
+ **/
 function m404Mid(req, res, next)
 {
     var err = new Error();
@@ -102,8 +119,8 @@ function m404Mid(req, res, next)
 }
 
 /**
-* 500处理中间件
-**/
+ * 500处理中间件
+ **/
 function m500Mid(err, req, res, next)
 {
     var code = err.status || 500,
